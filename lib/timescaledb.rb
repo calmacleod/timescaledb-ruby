@@ -101,13 +101,15 @@ module Timescaledb
   end
 end
 
-# Delay scenic integration setup until after Rails has finished initializing.
-# This ensures the application's initializers run first and can configure Timescaledb/Scenic as needed.
-if defined?(Rails) && Rails.respond_to?(:application) && Rails.application
-  Rails.application.config.after_initialize do
-    Timescaledb.setup_scenic_integration
-  end
-else
+# If we're in a Rails environment, register an after_initialize hook via a Railtie so all app
+# initializers have run first. If this gem is loaded after Rails is already initialized (e.g. with
+# `require: false`), run the setup immediately since we are already "after initialization".
+require_relative 'timescaledb/railtie' if defined?(Rails::Railtie)
+
+if defined?(Rails) && Rails.respond_to?(:application) && Rails.application&.initialized?
+  # Timescaledb.setup_scenic_integration
+elsif !defined?(Rails)
   # For non-Rails usage, setup immediately.
+  puts "Falling back to non-Rails usage."
   Timescaledb.setup_scenic_integration
 end
