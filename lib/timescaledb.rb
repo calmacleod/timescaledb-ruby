@@ -101,12 +101,13 @@ module Timescaledb
   end
 end
 
-# Delay scenic integration setup to respect user configuration when using Rails
-if defined?(ActiveSupport) && ActiveSupport.respond_to?(:on_load)
-  ActiveSupport.on_load(:active_record) do
+# Delay scenic integration setup until after Rails has finished initializing.
+# This ensures the application's initializers run first and can configure Timescaledb/Scenic as needed.
+if defined?(Rails) && Rails.respond_to?(:application) && Rails.application
+  Rails.application.config.after_initialize do
     Timescaledb.setup_scenic_integration
   end
 else
-  # For non-Rails usage, setup immediately
+  # For non-Rails usage, setup immediately.
   Timescaledb.setup_scenic_integration
 end
