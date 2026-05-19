@@ -47,9 +47,6 @@ module Timescaledb
                           number_partitions: nil,
                           **hypertable_options)
 
-      original_logger = ActiveRecord::Base.logger
-      ActiveRecord::Base.logger = Logger.new(STDOUT) unless original_logger.nil?
-
       dimension = "by_range(#{quote(time_column)}, #{parse_interval(chunk_time_interval)})"
 
       arguments = [ quote(table_name), dimension,
@@ -69,8 +66,6 @@ module Timescaledb
       if drop_after
         add_retention_policy(table_name, drop_after: drop_after)
       end
-    ensure
-      ActiveRecord::Base.logger = original_logger if original_logger
     end
 
     # Create a new continuous aggregate
